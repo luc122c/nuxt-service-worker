@@ -11,10 +11,10 @@
   },
   "contributors": [
     {
-      "name": "Maxim Karpov",
-        "email": "me@m-k.mx",
-        "url": "https://github.com/makkarpov"
-      }
+    "name": "Maxim Karpov",
+      "email": "me@m-k.mx",
+      "url": "https://github.com/makkarpov"
+    }
   ],
   "homepage": "https://github.com/luc122c/nuxt3-service-worker",
   "repository": {
