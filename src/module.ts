@@ -13,10 +13,10 @@ export interface ModuleOptions {
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
-    name: '@makkarpov/nuxt-service-worker',
+    name: 'nuxt3-service-worker',
     configKey: 'serviceWorker',
     compatibility: {
-      nuxt: '^3.0.0'
+      nuxt: '^3.4.0'
     }
   },
   defaults: {
@@ -28,7 +28,7 @@ export default defineNuxtModule<ModuleOptions>({
       return;
     }
 
-    if (nuxt.options.builder === 'webpack') {
+    if (nuxt.options.builder === '@nuxt/webpack-builder') {
       logger.error('Service worker module supports only Vite/Rollup build stack');
       process.exit(1);
     }
@@ -39,8 +39,10 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     const plugin = rollupPlugin(nuxt.options.dev);
-    nuxt.hook('nitro:config', (cfg) => { cfg.rollupConfig.plugins.push(plugin); });
-    nuxt.hook('vite:extendConfig', (cfg) => { cfg.plugins.push(plugin); });
+    nuxt.hook('vite:extendConfig', (config) => {
+      config.plugins ||= [];
+      config.plugins.push(plugin);
+    });
 
     nuxt.hook('prepare:types', (ev) => {
       const typesFile = resolve(dirname(fileURLToPath(import.meta.url)), 'runtime.d.ts');
@@ -58,7 +60,7 @@ export default defineNuxtModule<ModuleOptions>({
       installDevMiddleware(() => server, resolvedEntry);
     } else {
       const buildPlugin = rollupBuildPlugin(resolvedEntry);
-      nuxt.hook('vite:extendConfig', (cfg, env) => { if (env.isClient) { cfg.plugins.push(buildPlugin); } });
+      nuxt.hook('vite:extendConfig', ({ plugins }, env) => { if (env.isClient) { plugins?.push(buildPlugin); } });
 
       nuxt.hook('nitro:build:before', async (ev) => {
         await moveOutputFile(buildPlugin, ev);

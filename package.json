@@ -1,13 +1,21 @@
 {
-  "name": "@makkarpov/nuxt-service-worker",
-  "version": "0.1.2",
+  "name": "nuxt3-service-worker",
+  "version": "1.0.1",
+  "description": "Simple module that configures build system to bundle and expose service worker script at website root path.",
   "license": "MIT",
   "type": "module",
   "author": {
-    "name": "Maxim Karpov",
-    "email": "me@m-k.mx",
-    "url": "https://github.com/makkarpov"
+    "name": "Luke Nelson",
+    "email": "luke@nelson.zone",
+    "url": "https://lukenelson.uk/"
   },
+  "contributors": [
+    {
+      "name": "Maxim Karpov",
+      "email": "me@m-k.mx",
+      "url": "https://github.com/makkarpov"
+    }
+  ],
   "homepage": "https://github.com/makkarpov/nuxt-service-worker",
   "repository": {
     "type": "git",
@@ -18,10 +26,12 @@
   },
   "keywords": [
     "nuxt",
+    "nuxt 3",
     "service-worker"
   ],
   "exports": {
     ".": {
+      "types": "./dist/types.d.ts",
       "import": "./dist/module.mjs",
       "require": "./dist/module.cjs"
     }
@@ -36,18 +46,29 @@
     "dev": "nuxi dev playground",
     "dev:build": "nuxi build playground",
     "dev:prepare": "nuxt-module-build --stub && nuxi prepare playground",
-    "dev:preview": "node playground/.output/server/index.mjs"
+    "dev:preview": "node playground/.output/server/index.mjs",
+    "release": "npm run lint && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@nuxt/kit": "^3.0.0-rc.4",
-    "consola": "^2.15.3",
-    "magic-string": "^0.26.2",
-    "es-module-lexer": "^0.10.5"
+    "@nuxt/kit": "^3.4.2",
+    "consola": "^3.1.0",
+    "es-module-lexer": "^1.2.1",
+    "magic-string": "^0.30.0"
   },
   "devDependencies": {
     "@nuxt/module-builder": "latest",
     "@nuxtjs/eslint-config-typescript": "latest",
+    "@types/color-name": "^1.1.1",
     "eslint": "latest",
-    "nuxt": "^3.0.0-rc.4"
+    "nuxt": "latest",
+    "@types/node": "^18",
+    "@nuxt/eslint-config": "^0.1.1",
+    "@nuxt/schema": "^3.4.2",
+    "@nuxt/test-utils": "^3.4.2",
+    "changelogen": "^0.5.3",
+    "vitest": "^0.30.1"
   }
 }
