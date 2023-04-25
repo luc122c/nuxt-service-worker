@@ -1,6 +1,6 @@
 {
   "name": "nuxt3-service-worker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple module that configures build system to bundle and expose service worker script at website root path.",
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "contributors": [
     {
-    "name": "Maxim Karpov",
+      "name": "Maxim Karpov",
       "email": "me@m-k.mx",
       "url": "https://github.com/makkarpov"
     }
