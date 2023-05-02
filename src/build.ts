@@ -67,7 +67,6 @@ export function rollupPlugin(dev: boolean): Plugin {
       if (id !== SERVICE_WORKER_URL) {
         return;
       }
-
       return (
         'export default ' +
         JSON.stringify({
@@ -106,6 +105,10 @@ export function rollupBuildPlugin(entryPoint: string): BuildPlugin {
     },
 
     renderChunk(code: string, chunk: RenderedChunk) {
+      if (ret.workerFileName === undefined) {
+        ret.workerFileName = this.getFileName(chunkRef);
+      }
+
       if (code.includes(SERVICE_WORKER_LOCATION_TOKEN)) {
         const ms = new MagicString(code, {});
         ms.replace(SERVICE_WORKER_LOCATION_TOKEN, '/' + ret.workerFileName);
@@ -145,11 +148,11 @@ export async function moveOutputFile(
   nitro: Nitro
 ): Promise<void> {
   const outputDir = resolve(nitro.options.buildDir, 'serviceWorker');
-  const outputFile = resolve(outputDir, workerFileName);
+  const outputFile = resolve(outputDir, workerFileName!);
   const nuxtBaseDir = <string>(
     (<any>nitro.options.runtimeConfig.app).buildAssetsDir
   );
-  const baseFile = resolve(outputDirectory, workerFileName);
+  const baseFile = resolve(outputDirectory!, workerFileName!);
   await mkdir(dirname(outputFile), { recursive: true });
 
   await writeFile(

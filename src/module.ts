@@ -1,7 +1,7 @@
 import { resolve, dirname } from 'path';
-import { existsSync, promises } from 'fs';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { defineNuxtModule } from '@nuxt/kit';
+import { defineNuxtModule, extendViteConfig } from '@nuxt/kit';
 import type { ViteDevServer } from 'vite';
 import { defu } from 'defu';
 import {
@@ -51,9 +51,14 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.hook('nitro:config', (config) => {
       config.rollupConfig ||= {};
       config.rollupConfig.plugins ||= [];
-      config.rollupConfig.plugins.push(plugin);
+      if (Array.isArray(config.rollupConfig.plugins)) {
+        config.rollupConfig.plugins.push(plugin);
+      } else {
+        config.rollupConfig.plugins = [plugin];
+      }
     });
-    nuxt.hook('vite:extendConfig', (config) => {
+
+    extendViteConfig((config) => {
       config.plugins ||= [];
       config.plugins.push(plugin);
     });

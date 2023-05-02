@@ -53,7 +53,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@nuxt/kit": "^3.4.2",
+    "@nuxt/kit": "^3.4.3",
     "es-module-lexer": "^1.2.1",
     "magic-string": "^0.30.0"
   },
