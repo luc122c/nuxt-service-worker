@@ -69,5 +69,8 @@
     "eslint": "latest",
     "nuxt": "latest",
     "vitest": "^0.30.1"
+  },
+  "unbuild": {
+    "failOnWarn": false
   }
 }
