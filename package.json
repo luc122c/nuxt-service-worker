@@ -54,21 +54,20 @@
   },
   "dependencies": {
     "@nuxt/kit": "^3.4.2",
-    "consola": "^3.1.0",
     "es-module-lexer": "^1.2.1",
     "magic-string": "^0.30.0"
   },
   "devDependencies": {
-    "@nuxt/module-builder": "latest",
-    "@nuxtjs/eslint-config-typescript": "latest",
-    "@types/color-name": "^1.1.1",
-    "eslint": "latest",
-    "nuxt": "latest",
-    "@types/node": "^18",
     "@nuxt/eslint-config": "^0.1.1",
+    "@nuxt/module-builder": "latest",
     "@nuxt/schema": "^3.4.2",
     "@nuxt/test-utils": "^3.4.2",
+    "@nuxtjs/eslint-config-typescript": "latest",
+    "@types/color-name": "^1.1.1",
+    "@types/node": "^18",
     "changelogen": "^0.5.3",
+    "eslint": "latest",
+    "nuxt": "latest",
     "vitest": "^0.30.1"
   }
 }

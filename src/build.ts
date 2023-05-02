@@ -1,12 +1,13 @@
 import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { isAbsolute, normalize, resolve } from 'path';
+import { isAbsolute, normalize, resolve, dirname } from 'path';
 import { existsSync } from 'fs';
 import { Plugin, ViteDevServer } from 'vite';
 import MagicString from 'magic-string';
 import { addDevServerHandler } from '@nuxt/kit';
-import { Nitro } from 'nitropack';
-import { defineEventHandler } from 'h3'
+import type { Nitro } from 'nitropack';
+import { defineEventHandler } from 'h3';
 import { init, parse as parseImports } from 'es-module-lexer';
+import type { RenderedChunk } from 'rollup';
 
 const SERVICE_WORKER_ID = '#service-worker';
 const SERVICE_WORKER_URL = 'virtual:serviceWorkerConfig';
@@ -14,10 +15,13 @@ const SERVICE_WORKER_LOCATION_TOKEN = '__SERVICE_WORKER_LOCATION__';
 
 export const DEV_SERVICE_WORKER_ROUTE = '/sw.js';
 
-export function installDevMiddleware(serverGetter: () => ViteDevServer, entryPoint: string) {
+export function installDevMiddleware(
+  serverGetter: () => ViteDevServer,
+  entryPoint: string
+) {
   addDevServerHandler({
     route: DEV_SERVICE_WORKER_ROUTE,
-    handler: defineEventHandler(async({ node: { req, res } }) => {
+    handler: defineEventHandler(async ({ node: { req, res } }) => {
       const server = serverGetter();
       if (server === undefined) {
         res.writeHead(500);
@@ -30,7 +34,10 @@ export function installDevMiddleware(serverGetter: () => ViteDevServer, entryPoi
       try {
         await server.moduleGraph.ensureEntryFromUrl(pointUrl);
         const code = await readFile(entryPoint, { encoding: 'utf-8' });
-        const transformed = await server.pluginContainer.transform(code, pointUrl);
+        const transformed = await server.pluginContainer.transform(
+          code,
+          pointUrl
+        );
 
         res.writeHead(200, { 'Content-Type': 'text/javascript' });
         res.end(transformed?.code, 'utf-8');
@@ -39,7 +46,7 @@ export function installDevMiddleware(serverGetter: () => ViteDevServer, entryPoi
         res.writeHead(500);
         res.end(e.stack);
       }
-    })
+    }),
   });
 }
 
@@ -61,48 +68,44 @@ export function rollupPlugin(dev: boolean): Plugin {
         return;
       }
 
-      return 'export default ' + JSON.stringify({
-        url: dev ? DEV_SERVICE_WORKER_ROUTE : SERVICE_WORKER_LOCATION_TOKEN
-      }) + ';';
-    }
-  }
+      return (
+        'export default ' +
+        JSON.stringify({
+          url: dev ? DEV_SERVICE_WORKER_ROUTE : SERVICE_WORKER_LOCATION_TOKEN,
+        }) +
+        ';'
+      );
+    },
+  };
 }
 
 export interface BuildPlugin extends Plugin {
-  workerFileName?: string ;
-  outputDirectory?: string ;
+  workerFileName?: string;
+  outputDirectory?: string;
 }
 
 export function rollupBuildPlugin(entryPoint: string): BuildPlugin {
-  let chunkRef:string;
+  let chunkRef: string;
 
-  const ret = <BuildPlugin> {
+  const ret = <BuildPlugin>{
     name: 'service-worker:production',
-    workerFileName: undefined,
-    outputDirectory: undefined,
 
     buildStart(options) {
       // First time we will get bogus config: discard it.
-      if (!options.plugins) {
-        return;
-      }
-
+      if (!options.plugins) return;
       chunkRef = this.emitFile({
         type: 'chunk',
         id: entryPoint,
-        name: 'sw'
+        name: 'sw',
       });
     },
 
     generateBundle(output) {
       ret.outputDirectory = output.dir;
+      ret.workerFileName = this.getFileName(chunkRef);
     },
 
-    renderChunk(code: string) {
-      if (ret.workerFileName === undefined) {
-        ret.workerFileName = this.getFileName(chunkRef);
-      }
-
+    renderChunk(code: string, chunk: RenderedChunk) {
       if (code.includes(SERVICE_WORKER_LOCATION_TOKEN)) {
         const ms = new MagicString(code, {});
         ms.replace(SERVICE_WORKER_LOCATION_TOKEN, '/' + ret.workerFileName);
@@ -110,13 +113,16 @@ export function rollupBuildPlugin(entryPoint: string): BuildPlugin {
       }
 
       return null;
-    }
+    },
   };
 
   return ret;
 }
 
-export async function transformImports(source: string, resolutionPrefix: string): Promise<string> {
+export async function transformImports(
+  source: string,
+  resolutionPrefix: string
+): Promise<string> {
   await init;
 
   const ms = new MagicString(source);
@@ -134,15 +140,24 @@ export async function transformImports(source: string, resolutionPrefix: string)
   return ms.toString();
 }
 
-export async function moveOutputFile({ outputDirectory, workerFileName }: BuildPlugin, nitro: Nitro): Promise<void> {
+export async function moveOutputFile(
+  { outputDirectory, workerFileName }: BuildPlugin,
+  nitro: Nitro
+): Promise<void> {
   const outputDir = resolve(nitro.options.buildDir, 'serviceWorker');
-  const nuxtBaseDir = <string> (<any> nitro.options.runtimeConfig.app).buildAssetsDir;
-  await mkdir(outputDir);
+  const outputFile = resolve(outputDir, workerFileName);
+  const nuxtBaseDir = <string>(
+    (<any>nitro.options.runtimeConfig.app).buildAssetsDir
+  );
+  const baseFile = resolve(outputDirectory, workerFileName);
+  await mkdir(dirname(outputFile), { recursive: true });
 
-  const baseFile = resolve(outputDirectory!, workerFileName!);
   await writeFile(
-    resolve(outputDir, workerFileName!),
-    await transformImports(await readFile(baseFile, { encoding: 'utf-8' }), nuxtBaseDir),
+    outputFile,
+    await transformImports(
+      await readFile(baseFile, { encoding: 'utf-8' }),
+      nuxtBaseDir
+    ),
     { encoding: 'utf-8' }
   );
 
@@ -151,21 +166,29 @@ export async function moveOutputFile({ outputDirectory, workerFileName }: BuildP
   nitro.options.publicAssets.push({
     baseURL: '/',
     dir: outputDir,
-    maxAge: 60
+    maxAge: 60,
   });
 }
 
 interface ManifestFile {
   [k: string]: {
     src?: string;
-  }
+  };
 }
 
-export async function cleanupManifests(buildDir: string, rootDir: string, entryPoint: string): Promise<void> {
+export async function cleanupManifests(
+  buildDir: string,
+  rootDir: string,
+  entryPoint: string
+): Promise<void> {
   async function cleanup(file: string): Promise<boolean> {
-    if (!existsSync(file)) { return false; }
+    if (!existsSync(file)) {
+      return false;
+    }
 
-    const data = <ManifestFile> JSON.parse(await readFile(file, { encoding: 'utf-8' }));
+    const data = <ManifestFile>(
+      JSON.parse(await readFile(file, { encoding: 'utf-8' }))
+    );
     let changed = false;
 
     for (const [k, v] of Object.entries(data)) {
@@ -180,7 +203,9 @@ export async function cleanupManifests(buildDir: string, rootDir: string, entryP
     }
 
     if (changed) {
-      await writeFile(file, JSON.stringify(data, null, 2), { encoding: 'utf-8' });
+      await writeFile(file, JSON.stringify(data, null, 2), {
+        encoding: 'utf-8',
+      });
     }
 
     return changed;
@@ -190,7 +215,14 @@ export async function cleanupManifests(buildDir: string, rootDir: string, entryP
 
   const serverFile = resolve(buildDir, 'dist/server/client.manifest.json');
   if (await cleanup(serverFile)) {
-    const data = 'export default ' + await readFile(serverFile, { encoding: 'utf-8' }) + ';';
-    await writeFile(resolve(buildDir, 'dist/server/client.manifest.mjs'), data, { encoding: 'utf-8' });
+    const data =
+      'export default ' +
+      (await readFile(serverFile, { encoding: 'utf-8' })) +
+      ';';
+    await writeFile(
+      resolve(buildDir, 'dist/server/client.manifest.mjs'),
+      data,
+      { encoding: 'utf-8' }
+    );
   }
 }
